@@ -3,9 +3,9 @@ use crate::prelude::*;
 #[derive(Debug, Clone)]
 pub struct Request<'a> {
     client: &'a Client,
-    method: ReqwestMethod,
+    method: Method,
     relative_url: String,
-    query: Vec<(Cow<'a, str>, Cow<'a, str>)>,
+    query: Vec<(String, String)>,
     headers: Vec<(String, String)>,
     body: Option<String>,
     validate_statuscode: Option<u16>,
@@ -16,7 +16,7 @@ impl<'a> Request<'a> {
     fn init<S: AsRef<str>>(client: &'a Client, relative_url: S) -> Self {
         Self {
             client,
-            method: ReqwestMethod::GET,
+            method: Method::GET,
             relative_url: relative_url.as_ref().to_string(),
             query: Vec::new(),
             headers: Vec::new(),
@@ -27,40 +27,40 @@ impl<'a> Request<'a> {
 
     pub fn get<S: AsRef<str>>(client: &'a Client, relative_url: S) -> Self {
         Self {
-            method: ReqwestMethod::GET,
+            method: Method::GET,
             ..Self::init(client, relative_url)
         }
     }
 
     pub fn patch<S: AsRef<str>>(client: &'a Client, relative_url: S) -> Self {
         Self {
-            method: ReqwestMethod::PATCH,
+            method: Method::PATCH,
             ..Self::init(client, relative_url)
         }
     }
 
     pub fn post<S: AsRef<str>>(client: &'a Client, relative_url: S) -> Self {
         Self {
-            method: ReqwestMethod::POST,
+            method: Method::POST,
             ..Self::init(client, relative_url)
         }
     }
 
     pub fn put<S: AsRef<str>>(client: &'a Client, relative_url: S) -> Self {
         Self {
-            method: ReqwestMethod::PUT,
+            method: Method::PUT,
             ..Self::init(client, relative_url)
         }
     }
 
     pub fn delete<S: AsRef<str>>(client: &'a Client, relative_url: S) -> Self {
         Self {
-            method: ReqwestMethod::DELETE,
+            method: Method::DELETE,
             ..Self::init(client, relative_url)
         }
     }
 
-    pub fn build(self) -> Result<ReqwestRequestBuilder, RequestError> {
+    pub fn build(self) -> Result<RequestBuilder, RequestError> {
         let url = format!("{}/{}", self.client.home(), self.relative_url);
         let mut req = self
             .client
@@ -83,33 +83,42 @@ impl<'a> Request<'a> {
 impl<'a> Request<'a> {
     pub fn query<K, V>(mut self, name: K, value: V) -> Self
     where
-        K: Into<Cow<'a, str>>,
-        V: Into<Cow<'a, str>>,
+        K: AsRef<str>,
+        V: AsRef<str>,
     {
-        self.query.push((name.into(), value.into()));
+        self.query
+            .push((name.as_ref().to_string(), value.as_ref().to_string()));
         self
     }
 
-    // pub fn headers<K, V>(mut self, headers: &'a [(K, V)]) -> Self
-    // where
-    //     K: Into<String>,
-    //     V: Into<String>,
-    //     String: From<&'a K>,
-    //     String: From<&'a V>,
-    // {
-    //     for (k, v) in headers {
-    //         self.headers.push((k.into(), v.into()));
-    //     }
-    //     self
-    // }
+    pub fn queries<K, V>(mut self, queries: &[(K, V)]) -> Self
+    where
+        K: AsRef<str>,
+        V: AsRef<str>,
+    {
+        for (k, v) in queries {
+            self = self.query(k, v);
+        }
+        self
+    }
+
+    pub fn header<K, V>(mut self, name: K, value: V) -> Self
+    where
+        K: AsRef<str>,
+        V: AsRef<str>,
+    {
+        self.headers
+            .push((name.as_ref().to_string(), value.as_ref().to_string()));
+        self
+    }
+
     pub fn headers<K, V>(mut self, headers: &[(K, V)]) -> Self
     where
         K: AsRef<str>,
         V: AsRef<str>,
     {
         for (k, v) in headers {
-            self.headers
-                .push((k.as_ref().to_string(), v.as_ref().to_string()))
+            self = self.header(k, v);
         }
         self
     }
@@ -127,7 +136,7 @@ impl<'a> Request<'a> {
 
 // Network IO
 impl Request<'_> {
-    pub async fn send(self) -> Result<ReqwestReponse, RequestError> {
+    pub async fn send(self) -> Result<Response, RequestError> {
         Ok(self.build()?.send().await?)
     }
 

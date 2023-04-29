@@ -19,7 +19,7 @@ impl Client {
             .cookie_provider(Arc::clone(&cookie_store));
 
         if let Some(dh) = default_headers {
-            let mut headers = ReqwestHeaderMap::new();
+            let mut headers = HeaderMap::new();
             dh.iter().for_each(|(key, value)| {
                 headers.insert(*key, HeaderValue::from_static(value));
             });
