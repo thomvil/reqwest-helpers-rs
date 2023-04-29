@@ -5,8 +5,8 @@ pub struct Request<'a> {
     client: &'a Client,
     method: ReqwestMethod,
     relative_url: String,
-    query: Option<Vec<(String, String)>>,
-    headers: Option<&'a [(HeaderName, HeaderValue)]>,
+    query: Vec<(Cow<'a, str>, Cow<'a, str>)>,
+    headers: Vec<(Cow<'a, str>, Cow<'a, str>)>,
     body: Option<String>,
     validate_statuscode: Option<u16>,
 }
@@ -18,8 +18,8 @@ impl<'a> Request<'a> {
             client,
             method: ReqwestMethod::GET,
             relative_url: relative_url.as_ref().to_string(),
-            query: None,
-            headers: None,
+            query: Vec::new(),
+            headers: Vec::new(),
             body: None,
             validate_statuscode: None,
         }
@@ -60,39 +60,46 @@ impl<'a> Request<'a> {
         }
     }
 
-    pub fn build(self) -> ReqwestRequestBuilder {
+    pub fn build(self) -> Result<ReqwestRequestBuilder, RequestError> {
         let url = format!("{}/{}", self.client.home(), self.relative_url);
-        let mut req = self.client.inner().request(self.method, url);
-        if let Some(q) = self.query {
-            req = req.query(&q);
-        }
-        if let Some(h) = self.headers {
-            for (k, v) in h.iter() {
-                req = req.header(k, v);
-            }
+        let mut req = self
+            .client
+            .inner()
+            .request(self.method, url)
+            .query(&self.query);
+        for (k, v) in self.headers.iter() {
+            let header_key = HeaderName::try_from(k.as_bytes())?;
+            let header_value = HeaderValue::try_from(v.as_bytes())?;
+            req = req.header(header_key, header_value);
         }
         if let Some(b) = self.body {
             req = req.body(b);
         }
-        req
+        Ok(req)
     }
 }
 
 // Accessors
 impl<'a> Request<'a> {
-    pub fn query<K: Into<String>, V: Into<String>>(mut self, name: K, value: V) -> Self {
-        self.query = match self.query {
-            Some(mut query_list) => {
-                query_list.push((name.into(), value.into()));
-                Some(query_list)
-            }
-            None => Some(vec![(name.into(), value.into())]),
-        };
+    pub fn query<K, V>(mut self, name: K, value: V) -> Self
+    where
+        K: Into<Cow<'a, str>>,
+        V: Into<Cow<'a, str>>,
+    {
+        self.query.push((name.into(), value.into()));
         self
     }
 
-    pub fn headers(mut self, headers: &'a [(HeaderName, HeaderValue)]) -> Self {
-        self.headers = Some(headers);
+    pub fn headers<K, V>(mut self, headers: &'a [(K, V)]) -> Self
+    where
+        K: Into<Cow<'a, str>>,
+        V: Into<Cow<'a, str>>,
+        Cow<'a, str>: From<&'a K>,
+        Cow<'a, str>: From<&'a V>,
+    {
+        for (k, v) in headers {
+            self.headers.push((k.into(), v.into()));
+        }
         self
     }
 
@@ -109,16 +116,16 @@ impl<'a> Request<'a> {
 
 // Network IO
 impl Request<'_> {
-    pub async fn send(self) -> Result<ReqwestReponse, ReqwestError> {
-        self.build().send().await
+    pub async fn send(self) -> Result<ReqwestReponse, RequestError> {
+        Ok(self.build()?.send().await?)
     }
 
-    pub async fn text_raw(self) -> Result<(u16, String), ReqwestError> {
-        let res = self.build().send().await?;
+    pub async fn text_raw(self) -> Result<(u16, String), RequestError> {
+        let res = self.build()?.send().await?;
         Ok((res.status().as_u16(), res.text().await?))
     }
 
-    pub async fn text(self) -> Result<Result<String, (u16, String)>, ReqwestError> {
+    pub async fn text(self) -> Result<Result<String, (u16, String)>, RequestError> {
         let expected_statuscode = self.validate_statuscode;
         let (status, response_body) = self.text_raw().await?;
         if let Some(expected) = expected_statuscode && status == expected {
