@@ -1,0 +1,88 @@
+{
+    "struct-debug-clone": {
+        "prefix": "struct-dc",
+        "body": [
+            "#[derive(Debug, Clone)]",
+            "pub(crate) struct ${1:Struct_name} {",
+            "    ${2:field_name}: ${3:field_type},",
+            "}"
+        ],
+        "description": "New pub(crate) struct with Debug, Clone derived"
+    },
+    "struct-debug-copy-clone": {
+        "prefix": "struct-dcc",
+        "body": [
+            "#[derive(Debug, Copy, Clone)]",
+            "pub(crate) struct ${1:Struct_name} {",
+            "    ${2:field_name}: ${3:field_type},",
+            "}"
+        ],
+        "description": "New pub(crate) struct with Debug, Copy, Clone derived"
+    },
+    "struct-full": {
+        "prefix": "struct-full",
+        "body": [
+            "#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]",
+            "pub(crate) struct ${1:Struct_name} {",
+            "    ${2:field_name}: ${3:field_type},",
+            "}"
+        ],
+        "description": "New pub(crate) struct with most traits derived"
+    },
+    "struct-debug-clone-a": {
+        "prefix": "struct-dc-a",
+        "body": [
+            "#[derive(Debug, Clone)]",
+            "pub(crate) struct ${1:Struct_name}<'a> {",
+            "    ${2:field_name}: ${3:field_type},",
+            "}"
+        ],
+        "description": "New pub(crate) struct with Debug, Clone derived, with lifetime"
+    },
+    "struct-debug-copy-clone-a": {
+        "prefix": "struct-dcc-a",
+        "body": [
+            "#[derive(Debug, Copy, Clone)]",
+            "pub(crate) struct ${1:Struct_name}<'a> {",
+            "    ${2:field_name}: ${3:field_type},",
+            "}"
+        ],
+        "description": "New pub(crate) struct with Debug, Copy, Clone derived, with lifetime"
+    },
+    "struct-full-a": {
+        "prefix": "struct-full-a",
+        "body": [
+            "#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]",
+            "pub(crate) struct ${1:Struct_name}<'a> {",
+            "    ${2:field_name}: ${3:field_type},",
+            "}"
+        ],
+        "description": "New pub(crate) struct with most traits derived, with lifetime"
+    },
+    "testmod": {
+        "prefix": "testmod",
+        "body": [
+            "#[cfg(test)]",
+            "mod tests {",
+            "    use super::*;",
+            "",
+            "    #[test]",
+            "    fn test_${1:test_name}() {",
+            "        assert_eq!(${2:assert_left}, ${3:assert_right});",
+            "    }",
+            "}"
+        ],
+        "description": "Test module"
+    },
+    "test": {
+        "prefix": "test",
+        "body": [
+            "#[test]",
+            "fn ${1:name}() {",
+            "    assert_eq!(${2:assert_left}, ${3:assert_right});",
+            "}"
+        ],
+        "description": "#[test]"
+    }
+}
+
