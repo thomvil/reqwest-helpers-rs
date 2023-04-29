@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+#[derive(Debug)]
 pub enum RequestError {
     Reqwest(ReqwestError),
     Unparsable { statuscode: u16, body: String },
