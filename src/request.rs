@@ -145,7 +145,7 @@ impl Request<'_> {
         Ok((res.status().as_u16(), res.text().await?))
     }
 
-    pub async fn text(self) -> Result<Result<String, (u16, String)>, RequestError> {
+    pub async fn text(self) -> ResponseResult<String, String> {
         let expected_statuscode = self.validate_statuscode;
         let (status, response_body) = self.text_raw().await?;
         if let Some(expected) = expected_statuscode && status == expected {
@@ -155,9 +155,7 @@ impl Request<'_> {
         }
     }
 
-    pub async fn json<T: DeserializeOwned, E: DeserializeOwned>(
-        self,
-    ) -> Result<Result<T, (u16, E)>, RequestError> {
+    pub async fn json<T: DeserializeOwned, E: DeserializeOwned>(self) -> ResponseResult<T, E> {
         let expected_statuscode = self.validate_statuscode;
         let (statuscode, body) = self.text_raw().await?;
 
