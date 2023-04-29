@@ -95,7 +95,9 @@ impl<'a> Request<'a> {
         K: Into<String>,
         V: Into<String>,
         String: From<&'a K>,
-        String: From<&'a V>
+        String: From<&'a V>,
+        String: From<&'a &'a K>,
+        String: From<&'a &'a V>
     {
         for (k, v) in headers {
             self.headers.push((k.into(), v.into()));
