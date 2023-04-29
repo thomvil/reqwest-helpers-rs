@@ -6,7 +6,7 @@ pub struct Request<'a> {
     method: ReqwestMethod,
     relative_url: String,
     query: Vec<(Cow<'a, str>, Cow<'a, str>)>,
-    headers: Vec<(Cow<'a, str>, Cow<'a, str>)>,
+    headers: Vec<(String, String)>,
     body: Option<String>,
     validate_statuscode: Option<u16>,
 }
@@ -92,10 +92,10 @@ impl<'a> Request<'a> {
 
     pub fn headers<K, V>(mut self, headers: &'a [(K, V)]) -> Self
     where
-        K: Into<Cow<'a, str>>,
-        V: Into<Cow<'a, str>>,
-        Cow<'a, str>: From<&'a K>,
-        Cow<'a, str>: From<&'a V>,
+        K: Into<String>,
+        V: Into<String>,
+        String: From<&'a K>,
+        String: From<&'a V>
     {
         for (k, v) in headers {
             self.headers.push((k.into(), v.into()));
