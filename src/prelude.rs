@@ -1,5 +1,5 @@
 pub(crate) use reqwest::{
-    header::{HeaderMap as ReqwestHeaderMap, HeaderValue},
+    header::{HeaderMap as ReqwestHeaderMap, HeaderName, HeaderValue},
     Client as ReqwestClient, Error as ReqwestError, Method as ReqwestMethod,
     RequestBuilder as ReqwestRequestBuilder, Response as ReqwestReponse,
 };

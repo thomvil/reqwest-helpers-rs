@@ -5,8 +5,8 @@ pub struct Request<'a> {
     client: &'a Client,
     method: ReqwestMethod,
     relative_url: String,
-    query: Option<&'static [(&'static str, &'static str)]>,
-    headers: Option<&'static [(&'static str, String)]>,
+    query: Option<Vec<(String, String)>>,
+    headers: Option<&'a [(HeaderName, HeaderValue)]>,
     body: Option<String>,
     validate_statuscode: Option<u16>,
 }
@@ -64,11 +64,11 @@ impl<'a> Request<'a> {
         let url = format!("{}/{}", self.client.home(), self.relative_url);
         let mut req = self.client.inner().request(self.method, url);
         if let Some(q) = self.query {
-            req = req.query(q);
+            req = req.query(&q);
         }
         if let Some(h) = self.headers {
             for (k, v) in h.iter() {
-                req = req.header(k.to_string(), v.to_string());
+                req = req.header(k, v);
             }
         }
         if let Some(b) = self.body {
@@ -79,13 +79,19 @@ impl<'a> Request<'a> {
 }
 
 // Accessors
-impl Request<'_> {
-    pub fn query(mut self, query: &'static [(&'static str, &'static str)]) -> Self {
-        self.query = Some(query);
+impl<'a> Request<'a> {
+    pub fn query<K: Into<String>, V: Into<String>>(mut self, name: K, value: V) -> Self {
+        self.query = match self.query {
+            Some(mut query_list) => {
+                query_list.push((name.into(), value.into()));
+                Some(query_list)
+            }
+            None => Some(vec![(name.into(), value.into())]),
+        };
         self
     }
 
-    pub fn headers(mut self, headers: &'static [(&'static str, String)]) -> Self {
+    pub fn headers(mut self, headers: &'a [(HeaderName, HeaderValue)]) -> Self {
         self.headers = Some(headers);
         self
     }
