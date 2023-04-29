@@ -90,17 +90,26 @@ impl<'a> Request<'a> {
         self
     }
 
-    pub fn headers<K, V>(mut self, headers: &'a [(K, V)]) -> Self
+    // pub fn headers<K, V>(mut self, headers: &'a [(K, V)]) -> Self
+    // where
+    //     K: Into<String>,
+    //     V: Into<String>,
+    //     String: From<&'a K>,
+    //     String: From<&'a V>,
+    // {
+    //     for (k, v) in headers {
+    //         self.headers.push((k.into(), v.into()));
+    //     }
+    //     self
+    // }
+    pub fn headers<K, V>(mut self, headers: &[(K, V)]) -> Self
     where
-        K: Into<String>,
-        V: Into<String>,
-        String: From<&'a K>,
-        String: From<&'a V>,
-        String: From<&'a &'a K>,
-        String: From<&'a &'a V>
+        K: AsRef<str>,
+        V: AsRef<str>,
     {
         for (k, v) in headers {
-            self.headers.push((k.into(), v.into()));
+            self.headers
+                .push((k.as_ref().to_string(), v.as_ref().to_string()))
         }
         self
     }
