@@ -8,9 +8,10 @@ pub struct Request<'a> {
     query: Option<&'static [(&'static str, &'static str)]>,
     headers: Option<&'static [(&'static str, String)]>,
     body: Option<String>,
-    validate_status_code: Option<u16>,
+    validate_statuscode: Option<u16>,
 }
 
+// Constructors
 impl<'a> Request<'a> {
     fn init<S: AsRef<str>>(client: &'a Client, relative_url: S) -> Self {
         Self {
@@ -20,7 +21,7 @@ impl<'a> Request<'a> {
             query: None,
             headers: None,
             body: None,
-            validate_status_code: None,
+            validate_statuscode: None,
         }
     }
 
@@ -75,7 +76,33 @@ impl<'a> Request<'a> {
         }
         req
     }
+}
 
+// Accessors
+impl Request<'_> {
+    pub fn query(mut self, query: &'static [(&'static str, &'static str)]) -> Self {
+        self.query = Some(query);
+        self
+    }
+
+    pub fn headers(mut self, headers: &'static [(&'static str, String)]) -> Self {
+        self.headers = Some(headers);
+        self
+    }
+
+    pub fn body(mut self, body: String) -> Self {
+        self.body = Some(body);
+        self
+    }
+
+    pub fn validate_statuscode(mut self, statuscode: u16) -> Self {
+        self.validate_statuscode = Some(statuscode);
+        self
+    }
+}
+
+// Network IO
+impl Request<'_> {
     pub async fn send(self) -> Result<ReqwestReponse, ReqwestError> {
         self.build().send().await
     }
@@ -86,7 +113,7 @@ impl<'a> Request<'a> {
     }
 
     pub async fn text(self) -> Result<Result<String, (u16, String)>, ReqwestError> {
-        let expected_statuscode = self.validate_status_code;
+        let expected_statuscode = self.validate_statuscode;
         let (status, response_body) = self.text_raw().await?;
         if let Some(expected) = expected_statuscode && status == expected {
             Ok(Ok(response_body))
@@ -98,7 +125,7 @@ impl<'a> Request<'a> {
     pub async fn json<T: DeserializeOwned, E: DeserializeOwned>(
         self,
     ) -> Result<Result<T, (u16, E)>, RequestError> {
-        let expected_statuscode = self.validate_status_code;
+        let expected_statuscode = self.validate_statuscode;
         let (statuscode, body) = self.text_raw().await?;
 
         if let Some(expected) = expected_statuscode && statuscode == expected {
